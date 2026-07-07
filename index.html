@@ -120,9 +120,13 @@
 <script>
 (function(){
   var DAY_START="13:00", DAY_END="21:00";
-  var STATE_URL="https://raw.githubusercontent.com/JoquanJohnson/alchemy-live/main/live-state.json";
 
-  // Fallback lineup (used only if the shared file can't be read) — keeps the page from ever going blank.
+  // ---- JSONBin (live shared state) ----
+  var BIN_ID="6a4d43f1f5f4af5e296dc12c";
+  var ACCESS_KEY="$2a$10$2HsvAFajNVYDrBtkyi9pze04nsD86TQtlhpOcY9BkZHGsl5QKQIlW"; // read-only, safe in page
+  var STATE_URL="https://api.jsonbin.io/v3/b/"+BIN_ID+"/latest";
+  var POLL_MS=25000;
+
   var DEFAULT_SCHEDULE=[
     {id:"s0",start:"13:00",end:"15:00",venue:"RHB 137A",type:"symposium",name:"Symposium — Alchemical Thinking",dot:"yellow"},
     {id:"s1",start:"15:00",venue:"Great Hall",type:"act",name:"DJ Jamie",dot:"coral"},
@@ -172,7 +176,6 @@
     return base + (SHARED.offsetMinutes||0) + getLocalOffset();
   }
 
-  // build the working schedule from shared state (or fallback), sorted, with a display time
   function normalize(src){
     var arr=(src && src.length)? src.slice() : DEFAULT_SCHEDULE.slice();
     arr = arr.filter(function(s){ return s && s.start; });
@@ -180,11 +183,11 @@
     arr.forEach(function(s){
       var range = (s.type==="sw"||s.type==="finale") && s.end;
       s._disp = range ? (fmtD(toMin(s.start))+"–"+fmtD(toMin(s.end))) : fmtD(toMin(s.start));
-      if(s.type==="sw" && !Array.isArray(s.names)) s.names = String(s.name||"").split(",").map(function(x){return x.trim();}).filter(Boolean);
+      if(s.type==="sw" && !Array.isArray(s.names)) s.names=String(s.name||"").split(",").map(function(x){return x.trim();}).filter(Boolean);
     });
     return arr;
   }
-  function rebuild(){ SCHEDULE = normalize(SHARED.schedule); }
+  function rebuild(){ SCHEDULE=normalize(SHARED.schedule); }
 
   function slotEnd(i){
     if(SCHEDULE[i].end) return toMin(SCHEDULE[i].end);
@@ -193,9 +196,8 @@
   }
   function nameOf(s){ return s.type==="sw" ? (s.names||[]).join(", ") : s.name; }
   function idxById(id){ for(var i=0;i<SCHEDULE.length;i++){ if(SCHEDULE[i].id===id) return i; } return -1; }
-  function forcedIdx(){ if(SHARED.forceActId){ return idxById(SHARED.forceActId); } return -1; }
+  function forcedIdx(){ return SHARED.forceActId ? idxById(SHARED.forceActId) : -1; }
   function forced(){ return forcedIdx()>=0; }
-
   function currentIndex(n){
     var fi=forcedIdx(); if(fi>=0) return fi;
     for(var i=0;i<SCHEDULE.length;i++){ if(n>=toMin(SCHEDULE[i].start) && n<slotEnd(i)) return i; }
@@ -207,46 +209,31 @@
     if(SHARED.message && String(SHARED.message).trim()!==""){ el.style.display="flex"; el.textContent=SHARED.message; }
     else { el.style.display="none"; }
   }
-
   function renderNow(){
     var n=nowMin(), el=document.getElementById("afl-now"), nx=document.getElementById("afl-next");
     el.className="afl-now";
-    if(!forced() && n<toMin(DAY_START)){
-      el.classList.add("doors");
-      el.innerHTML='<p class="kicker">Doors</p><h1>Warming up</h1><div class="meta">The festival opens at 1pm. First up: the Symposium in RHB 137A.</div>';
-      nx.style.display="none"; return;
-    }
-    if(!forced() && n>=toMin(DAY_END)){
-      el.classList.add("wrap");
-      el.innerHTML='<p class="kicker">That\u2019s a wrap</p><h1>Thank you</h1><div class="meta">Thank you for being part of the first-ever Alchemy Festival. See you next time.</div>';
-      nx.style.display="none"; return;
-    }
+    if(!forced() && n<toMin(DAY_START)){ el.classList.add("doors");
+      el.innerHTML='<p class="kicker">Doors</p><h1>Warming up</h1><div class="meta">The festival opens at 1pm. First up: the Symposium in RHB 137A.</div>'; nx.style.display="none"; return; }
+    if(!forced() && n>=toMin(DAY_END)){ el.classList.add("wrap");
+      el.innerHTML='<p class="kicker">That\u2019s a wrap</p><h1>Thank you</h1><div class="meta">Thank you for being part of the first-ever Alchemy Festival. See you next time.</div>'; nx.style.display="none"; return; }
     var cur=currentIndex(n);
-    if(cur===-1){
-      el.classList.add("change");
+    if(cur===-1){ el.classList.add("change");
       el.innerHTML='<p class="kicker">\u23F1 Changeover</p><h1>Next act shortly</h1><div class="meta">Hang tight — the next performance is about to start.</div>';
     } else {
       var s=SCHEDULE[cur];
-      var kicker = s.type==="symposium" ? "On now · Symposium" : (s.type==="sw" ? "On now · Spoken Word Stage" : "On now");
+      var kicker=s.type==="symposium"?"On now · Symposium":(s.type==="sw"?"On now · Spoken Word Stage":"On now");
       var body;
-      if(s.type==="sw"){
-        body='<h1>Spoken Word</h1><div class="sw-names">'+(s.names||[]).map(function(nm){return "<span>"+nm+"</span>";}).join("")+'</div><div class="meta" style="margin-top:10px;">'+(s.venue||"")+'</div>';
-      } else {
-        var tail = forced() ? "" : " · on until "+fmt(slotEnd(cur));
-        body='<h1>'+s.name+'</h1><div class="meta">'+(s.venue||"")+tail+'</div>';
-      }
+      if(s.type==="sw"){ body='<h1>Spoken Word</h1><div class="sw-names">'+(s.names||[]).map(function(nm){return "<span>"+nm+"</span>";}).join("")+'</div><div class="meta" style="margin-top:10px;">'+(s.venue||"")+'</div>'; }
+      else { var tail=forced()?"":" · on until "+fmt(slotEnd(cur)); body='<h1>'+s.name+'</h1><div class="meta">'+(s.venue||"")+tail+'</div>'; }
       el.innerHTML='<p class="kicker">'+kicker+'</p>'+body;
     }
     var nextSlot=null;
     if(forced()){ if(cur>=0 && cur+1<SCHEDULE.length) nextSlot=SCHEDULE[cur+1]; }
     else { for(var j=0;j<SCHEDULE.length;j++){ if(toMin(SCHEDULE[j].start)>n){ nextSlot=SCHEDULE[j]; break; } } }
-    if(nextSlot){
-      nx.style.display="flex";
-      var t = forced() ? nextSlot._disp : fmt(toMin(nextSlot.start));
-      nx.innerHTML='<span class="lbl">Next up</span> <span>'+nameOf(nextSlot)+'</span> <span class="nx-time">'+t+'</span>';
-    } else { nx.style.display="none"; }
+    if(nextSlot){ nx.style.display="flex"; var t=forced()?nextSlot._disp:fmt(toMin(nextSlot.start));
+      nx.innerHTML='<span class="lbl">Next up</span> <span>'+nameOf(nextSlot)+'</span> <span class="nx-time">'+t+'</span>'; }
+    else { nx.style.display="none"; }
   }
-
   function renderAllday(){
     var n=nowMin(), wrap=document.getElementById("afl-allday"); wrap.innerHTML="";
     ALLDAY.forEach(function(a){
@@ -258,30 +245,28 @@
       wrap.innerHTML+='<div class="afl-tile"><div class="t-name">'+a.name+'</div><div class="t-venue">'+a.venue+'</div><span class="t-state '+cls+'">'+state+'</span></div>';
     });
   }
-
   function renderRun(){
     var n=nowMin(), wrap=document.getElementById("afl-run"); wrap.innerHTML="";
     var cur=currentIndex(n);
     SCHEDULE.forEach(function(s,i){
       var status;
-      if(forced()){ status = i<cur ? "past" : (i===cur ? "current" : "up"); }
-      else { status = (i<cur || n>=slotEnd(i)) ? "past" : (i===cur ? "current" : "up"); }
-      var nowBadge = status==="current" ? '<span class="afl-badge-now">On now</span>' : "";
+      if(forced()){ status=i<cur?"past":(i===cur?"current":"up"); }
+      else { status=(i<cur||n>=slotEnd(i))?"past":(i===cur?"current":"up"); }
+      var nowBadge=status==="current"?'<span class="afl-badge-now">On now</span>':"";
       var node;
       if(s.type==="sw"){
         node='<div class="afl-sw '+(status==="past"?"afl-past":status==="current"?"afl-current":"")+'">'
-           +'<div class="sw-top"><span class="sw-time">'+s._disp+'</span><span class="sw-lbl">Spoken Word Stage</span>'+nowBadge+'</div>'
-           +'<div class="sw-names">'+(s.names||[]).map(function(nm){return "<span>"+nm+"</span>";}).join("")+'</div></div>';
+          +'<div class="sw-top"><span class="sw-time">'+s._disp+'</span><span class="sw-lbl">Spoken Word Stage</span>'+nowBadge+'</div>'
+          +'<div class="sw-names">'+(s.names||[]).map(function(nm){return "<span>"+nm+"</span>";}).join("")+'</div></div>';
       } else {
-        var finale = s.type==="finale" ? " finale" : "";
+        var finale=s.type==="finale"?" finale":"";
         node='<div class="afl-row'+finale+' '+(status==="past"?"afl-past":status==="current"?"afl-current":"")+'">'
-           +'<div class="time">'+s._disp+'</div><span class="dot '+(s.dot||"coral")+'"></span>'
-           +'<div class="nm">'+s.name+'</div>'+nowBadge+'</div>';
+          +'<div class="time">'+s._disp+'</div><span class="dot '+(s.dot||"coral")+'"></span>'
+          +'<div class="nm">'+s.name+'</div>'+nowBadge+'</div>';
       }
       wrap.innerHTML+=node;
     });
   }
-
   function mountCrew(){
     if(qs("crew")!=="1") return;
     var box=document.createElement("div"); box.className="afl-crew";
@@ -289,13 +274,10 @@
     box.innerHTML='<h4>Crew · local test nudge</h4><div class="off"></div>'
       +'<div class="btns"><button data-d="-5">\u22125</button><button data-d="5">+5</button><button class="reset" data-d="0">Reset</button></div>';
     document.getElementById("afl").appendChild(box);
-    box.addEventListener("click",function(e){
-      var b=e.target.closest("button"); if(!b) return; var d=+b.getAttribute("data-d");
-      setLocalOffset(d===0?0:getLocalOffset()+d); paint(); render();
-    });
+    box.addEventListener("click",function(e){ var b=e.target.closest("button"); if(!b) return; var d=+b.getAttribute("data-d");
+      setLocalOffset(d===0?0:getLocalOffset()+d); paint(); render(); });
     paint();
   }
-
   function render(){
     document.getElementById("afl-clock").textContent=fmtClock(nowMin());
     renderMsg(); renderNow(); renderAllday(); renderRun();
@@ -303,14 +285,14 @@
   function scrollToNow(){ var c=document.querySelector(".afl-current"); if(c) c.scrollIntoView({behavior:"smooth",block:"center"}); }
 
   function fetchState(){
-    fetch(STATE_URL+"?_="+Date.now(), {cache:"no-store"})
+    fetch(STATE_URL+"?_="+Date.now(), { cache:"no-store", headers:{ "X-Access-Key":ACCESS_KEY, "X-Bin-Meta":"false" } })
       .then(function(r){ return r.ok ? r.json() : null; })
       .then(function(j){
         if(j && typeof j==="object"){
-          SHARED.offsetMinutes = (typeof j.offsetMinutes==="number") ? j.offsetMinutes : 0;
-          SHARED.message = (typeof j.message==="string") ? j.message : "";
-          SHARED.forceActId = (typeof j.forceActId==="string") ? j.forceActId : null;
-          SHARED.schedule = Array.isArray(j.schedule) ? j.schedule : null;
+          SHARED.offsetMinutes=(typeof j.offsetMinutes==="number")?j.offsetMinutes:0;
+          SHARED.message=(typeof j.message==="string")?j.message:"";
+          SHARED.forceActId=(typeof j.forceActId==="string")?j.forceActId:null;
+          SHARED.schedule=Array.isArray(j.schedule)?j.schedule:null;
         }
         rebuild(); render();
       })
@@ -318,13 +300,15 @@
   }
 
   function boot(){
-    rebuild();  // start on fallback immediately
+    rebuild();
     document.getElementById("afl-jump-btn").addEventListener("click",scrollToNow);
     mountCrew();
     render();
     fetchState();
     setTimeout(scrollToNow,500);
-    setInterval(fetchState,20000);
+    // poll only while the page is actually being looked at (saves requests)
+    setInterval(function(){ if(document.visibilityState==="visible") fetchState(); }, POLL_MS);
+    document.addEventListener("visibilitychange", function(){ if(document.visibilityState==="visible") fetchState(); });
   }
   if(document.readyState==="loading"){ document.addEventListener("DOMContentLoaded",boot); } else { boot(); }
 })();
