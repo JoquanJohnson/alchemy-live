@@ -1,6 +1,29 @@
 {
   "offsetMinutes": 0,
-  "message": "WE ARE CHANGING OVER",
-  "forceActIndex": null,
-  "updatedAt": "2026-07-07T17:45:08.796499+00:00"
+  "message": "",
+  "forceActId": null,
+  "updatedAt": "",
+  "schedule": [
+    {"id":"s0","start":"13:00","end":"15:00","venue":"RHB 137A","type":"symposium","name":"Symposium — Alchemical Thinking","dot":"yellow"},
+    {"id":"s1","start":"15:00","venue":"Great Hall","type":"act","name":"DJ Jamie","dot":"coral"},
+    {"id":"s2","start":"16:00","end":"16:25","venue":"Great Hall","type":"sw","names":["Yaz","Leah & Arielle","Alinda"]},
+    {"id":"s3","start":"16:25","venue":"Great Hall","type":"act","name":"Immaculate","dot":"yellow"},
+    {"id":"s4","start":"16:30","venue":"Great Hall","type":"act","name":"Zack","dot":"teal"},
+    {"id":"s5","start":"16:35","venue":"Great Hall","type":"act","name":"Timothy","dot":"coral"},
+    {"id":"s6","start":"16:40","venue":"Great Hall","type":"act","name":"The Blue Brick House","dot":"yellow"},
+    {"id":"s7","start":"17:00","end":"17:20","venue":"Great Hall","type":"sw","names":["Angel","Joshua"]},
+    {"id":"s8","start":"17:25","venue":"Great Hall","type":"act","name":"Josh","dot":"teal"},
+    {"id":"s9","start":"17:35","venue":"Great Hall","type":"act","name":"Sautii","dot":"coral"},
+    {"id":"s10","start":"17:40","venue":"Great Hall","type":"act","name":"Moziah","dot":"yellow"},
+    {"id":"s11","start":"17:50","venue":"Great Hall","type":"act","name":"Meaningful","dot":"teal"},
+    {"id":"s12","start":"18:00","end":"18:15","venue":"Great Hall","type":"sw","names":["Rasheed","Quest","Zack"]},
+    {"id":"s13","start":"18:15","venue":"Great Hall","type":"act","name":"Quest","dot":"coral"},
+    {"id":"s14","start":"18:30","venue":"Great Hall","type":"act","name":"Zoe","dot":"yellow"},
+    {"id":"s15","start":"18:45","venue":"Great Hall","type":"act","name":"Lilac Dior","dot":"teal"},
+    {"id":"s16","start":"19:00","end":"19:15","venue":"Great Hall","type":"sw","names":["Rofeda"]},
+    {"id":"s17","start":"19:15","venue":"Great Hall","type":"act","name":"Rezon8","dot":"coral"},
+    {"id":"s18","start":"19:45","venue":"Great Hall","type":"act","name":"DJ Baconrasher","dot":"yellow"},
+    {"id":"s19","start":"20:00","end":"20:15","venue":"Great Hall","type":"sw","names":["Lilac Rose","Zoe","Yaz"]},
+    {"id":"s20","start":"20:15","end":"21:00","venue":"Great Hall","type":"finale","name":"UYT Collective","dot":"yellow"}
+  ]
 }
