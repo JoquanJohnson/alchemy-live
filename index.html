@@ -95,7 +95,6 @@
   .afl-row .nm { font-size:15px; }
 }
 
-  /* shared message banner */
   .afl-msg { background:#FFD23F; color:#1a1a1a; border-radius:14px; padding:14px 20px; margin-bottom:14px; font-weight:800; font-size:16px; display:flex; align-items:center; gap:10px; }
   .afl-msg::before { content:"\1F4E3"; font-size:20px; }
 </style>
@@ -103,53 +102,49 @@
 <body>
 
 <div class="afl-wrap" id="afl">
-
   <div class="afl-status">
     <span class="afl-live"><span class="pulse"></span> Live</span>
     <span class="afl-clock" id="afl-clock">--:--</span>
   </div>
-
   <div id="afl-msg" class="afl-msg" style="display:none;"></div>
   <div id="afl-now" class="afl-now"></div>
   <div id="afl-next" class="afl-next" style="display:none;"></div>
-
   <h2 class="afl-h2">Happening all day</h2>
   <div class="afl-allday" id="afl-allday"></div>
-
   <h2 class="afl-h2">Full running order</h2>
   <p class="afl-sub">Live acts in the Great Hall. Spoken Word Stage sets run between them.</p>
   <div class="afl-run" id="afl-run"></div>
-
   <div class="afl-jump"><button id="afl-jump-btn">↑ Jump to now</button></div>
-
 </div>
 
 <script>
 (function(){
-  // ---------- SCHEDULE DATA (indexes matter — the control app uses them) ----------
   var DAY_START="13:00", DAY_END="21:00";
-  var SCHEDULE=[
-    {start:"13:00", end:"15:00", venue:"RHB 137A", type:"symposium", name:"Symposium — Alchemical Thinking", disp:"1:00"},   // 0
-    {start:"15:00", venue:"Great Hall", type:"act", name:"DJ Jamie", dot:"coral", disp:"3:00"},                              // 1
-    {start:"16:00", end:"16:25", venue:"Great Hall", type:"sw", names:["Yaz","Leah & Arielle","Alinda"], disp:"4:00–4:25"},  // 2
-    {start:"16:25", venue:"Great Hall", type:"act", name:"Immaculate", dot:"yellow", disp:"4:25"},                           // 3
-    {start:"16:30", venue:"Great Hall", type:"act", name:"Zack", dot:"teal", disp:"4:30"},                                   // 4
-    {start:"16:35", venue:"Great Hall", type:"act", name:"Timothy", dot:"coral", disp:"4:35"},                               // 5
-    {start:"16:40", venue:"Great Hall", type:"act", name:"The Blue Brick House", dot:"yellow", disp:"4:40"},                 // 6
-    {start:"17:00", end:"17:20", venue:"Great Hall", type:"sw", names:["Angel","Joshua"], disp:"5:00–5:20"},                 // 7
-    {start:"17:25", venue:"Great Hall", type:"act", name:"Josh", dot:"teal", disp:"5:25"},                                   // 8
-    {start:"17:35", venue:"Great Hall", type:"act", name:"Sautii", dot:"coral", disp:"5:35"},                                // 9
-    {start:"17:40", venue:"Great Hall", type:"act", name:"Moziah", dot:"yellow", disp:"5:40"},                               // 10
-    {start:"17:50", venue:"Great Hall", type:"act", name:"Meaningful", dot:"teal", disp:"5:50"},                             // 11
-    {start:"18:00", end:"18:15", venue:"Great Hall", type:"sw", names:["Rasheed","Quest","Zack"], disp:"6:00"},              // 12
-    {start:"18:15", venue:"Great Hall", type:"act", name:"Quest", dot:"coral", disp:"6:15"},                                 // 13
-    {start:"18:30", venue:"Great Hall", type:"act", name:"Zoe", dot:"yellow", disp:"6:30"},                                  // 14
-    {start:"18:45", venue:"Great Hall", type:"act", name:"Lilac Dior", dot:"teal", disp:"6:45"},                             // 15
-    {start:"19:00", end:"19:15", venue:"Great Hall", type:"sw", names:["Rofeda"], disp:"7:00"},                              // 16
-    {start:"19:15", venue:"Great Hall", type:"act", name:"Rezon8", dot:"coral", disp:"7:15"},                                // 17
-    {start:"19:45", venue:"Great Hall", type:"act", name:"DJ Baconrasher", dot:"yellow", disp:"7:45"},                       // 18
-    {start:"20:00", end:"20:15", venue:"Great Hall", type:"sw", names:["Lilac Rose","Zoe","Yaz"], disp:"8:00"},              // 19
-    {start:"20:15", end:"21:00", venue:"Great Hall", type:"finale", name:"UYT Collective", dot:"yellow", disp:"8:15–9:00"}   // 20
+  var STATE_URL="https://raw.githubusercontent.com/JoquanJohnson/alchemy-live/main/live-state.json";
+
+  // Fallback lineup (used only if the shared file can't be read) — keeps the page from ever going blank.
+  var DEFAULT_SCHEDULE=[
+    {id:"s0",start:"13:00",end:"15:00",venue:"RHB 137A",type:"symposium",name:"Symposium — Alchemical Thinking",dot:"yellow"},
+    {id:"s1",start:"15:00",venue:"Great Hall",type:"act",name:"DJ Jamie",dot:"coral"},
+    {id:"s2",start:"16:00",end:"16:25",venue:"Great Hall",type:"sw",names:["Yaz","Leah & Arielle","Alinda"]},
+    {id:"s3",start:"16:25",venue:"Great Hall",type:"act",name:"Immaculate",dot:"yellow"},
+    {id:"s4",start:"16:30",venue:"Great Hall",type:"act",name:"Zack",dot:"teal"},
+    {id:"s5",start:"16:35",venue:"Great Hall",type:"act",name:"Timothy",dot:"coral"},
+    {id:"s6",start:"16:40",venue:"Great Hall",type:"act",name:"The Blue Brick House",dot:"yellow"},
+    {id:"s7",start:"17:00",end:"17:20",venue:"Great Hall",type:"sw",names:["Angel","Joshua"]},
+    {id:"s8",start:"17:25",venue:"Great Hall",type:"act",name:"Josh",dot:"teal"},
+    {id:"s9",start:"17:35",venue:"Great Hall",type:"act",name:"Sautii",dot:"coral"},
+    {id:"s10",start:"17:40",venue:"Great Hall",type:"act",name:"Moziah",dot:"yellow"},
+    {id:"s11",start:"17:50",venue:"Great Hall",type:"act",name:"Meaningful",dot:"teal"},
+    {id:"s12",start:"18:00",end:"18:15",venue:"Great Hall",type:"sw",names:["Rasheed","Quest","Zack"]},
+    {id:"s13",start:"18:15",venue:"Great Hall",type:"act",name:"Quest",dot:"coral"},
+    {id:"s14",start:"18:30",venue:"Great Hall",type:"act",name:"Zoe",dot:"yellow"},
+    {id:"s15",start:"18:45",venue:"Great Hall",type:"act",name:"Lilac Dior",dot:"teal"},
+    {id:"s16",start:"19:00",end:"19:15",venue:"Great Hall",type:"sw",names:["Rofeda"]},
+    {id:"s17",start:"19:15",venue:"Great Hall",type:"act",name:"Rezon8",dot:"coral"},
+    {id:"s18",start:"19:45",venue:"Great Hall",type:"act",name:"DJ Baconrasher",dot:"yellow"},
+    {id:"s19",start:"20:00",end:"20:15",venue:"Great Hall",type:"sw",names:["Lilac Rose","Zoe","Yaz"]},
+    {id:"s20",start:"20:15",end:"21:00",venue:"Great Hall",type:"finale",name:"UYT Collective",dot:"yellow"}
   ];
   var ALLDAY=[
     {name:"Symposium", venue:"RHB 137A", start:"13:00", end:"15:00"},
@@ -158,14 +153,13 @@
     {name:"Exhibition", venue:"Kingsway Corridor", allday:true}
   ];
 
-  // ---------- shared state (written by the control app, read by every phone) ----------
-  var STATE_URL="https://raw.githubusercontent.com/JoquanJohnson/alchemy-live/main/live-state.json";
-  var SHARED={ offsetMinutes:0, message:"", forceActIndex:null };
+  var SHARED={ offsetMinutes:0, message:"", forceActId:null, schedule:null };
+  var SCHEDULE=[];
 
-  // ---------- helpers ----------
-  function toMin(t){ var p=t.split(":"); return (+p[0])*60+(+p[1]); }
-  function fmt(m){ m=((m%1440)+1440)%1440; var h=Math.floor(m/60), mm=m%60; var ap=h<12?"am":"pm"; var hh=h%12; if(hh===0)hh=12; return hh+":"+(mm<10?"0":"")+mm+ap; }
-  function fmtClock(m){ m=((m%1440)+1440)%1440; var h=Math.floor(m/60), mm=m%60; return (h<10?"0":"")+h+":"+(mm<10?"0":"")+mm; }
+  function toMin(t){ var p=String(t).split(":"); return (+p[0])*60+(+p[1]); }
+  function fmt(m){ m=((m%1440)+1440)%1440; var h=Math.floor(m/60),mm=m%60,ap=h<12?"am":"pm",hh=h%12; if(hh===0)hh=12; return hh+":"+(mm<10?"0":"")+mm+ap; }
+  function fmtD(m){ m=((m%1440)+1440)%1440; var h=Math.floor(m/60),mm=m%60,hh=h%12; if(hh===0)hh=12; return hh+":"+(mm<10?"0":"")+mm; }
+  function fmtClock(m){ m=((m%1440)+1440)%1440; var h=Math.floor(m/60),mm=m%60; return (h<10?"0":"")+h+":"+(mm<10?"0":"")+mm; }
   function qs(k){ var r=new RegExp("[?&]"+k+"=([^&]+)").exec(window.location.search); return r?decodeURIComponent(r[1]):null; }
 
   var OFFKEY="aflOffset";
@@ -173,30 +167,41 @@
   function setLocalOffset(v){ try{localStorage.setItem(OFFKEY,String(v));}catch(e){} }
 
   function nowMin(){
-    var override=qs("t"), base;
-    if(override && /^\d{1,2}:\d{2}$/.test(override)){ base=toMin(override); }
-    else { var d=new Date(); base=d.getHours()*60+d.getMinutes(); }
+    var o=qs("t"),base;
+    if(o && /^\d{1,2}:\d{2}$/.test(o)){ base=toMin(o); } else { var d=new Date(); base=d.getHours()*60+d.getMinutes(); }
     return base + (SHARED.offsetMinutes||0) + getLocalOffset();
   }
+
+  // build the working schedule from shared state (or fallback), sorted, with a display time
+  function normalize(src){
+    var arr=(src && src.length)? src.slice() : DEFAULT_SCHEDULE.slice();
+    arr = arr.filter(function(s){ return s && s.start; });
+    arr.sort(function(a,b){ return toMin(a.start)-toMin(b.start); });
+    arr.forEach(function(s){
+      var range = (s.type==="sw"||s.type==="finale") && s.end;
+      s._disp = range ? (fmtD(toMin(s.start))+"–"+fmtD(toMin(s.end))) : fmtD(toMin(s.start));
+      if(s.type==="sw" && !Array.isArray(s.names)) s.names = String(s.name||"").split(",").map(function(x){return x.trim();}).filter(Boolean);
+    });
+    return arr;
+  }
+  function rebuild(){ SCHEDULE = normalize(SHARED.schedule); }
 
   function slotEnd(i){
     if(SCHEDULE[i].end) return toMin(SCHEDULE[i].end);
     if(i+1<SCHEDULE.length) return toMin(SCHEDULE[i+1].start);
     return toMin(DAY_END);
   }
-  function nameOf(s){ return s.type==="sw" ? s.names.join(", ") : s.name; }
+  function nameOf(s){ return s.type==="sw" ? (s.names||[]).join(", ") : s.name; }
+  function idxById(id){ for(var i=0;i<SCHEDULE.length;i++){ if(SCHEDULE[i].id===id) return i; } return -1; }
+  function forcedIdx(){ if(SHARED.forceActId){ return idxById(SHARED.forceActId); } return -1; }
+  function forced(){ return forcedIdx()>=0; }
 
-  // unified: which slot is current? honours the forced override.
   function currentIndex(n){
-    if(SHARED.forceActIndex!=null && SHARED.forceActIndex>=0 && SHARED.forceActIndex<SCHEDULE.length){
-      return SHARED.forceActIndex;
-    }
+    var fi=forcedIdx(); if(fi>=0) return fi;
     for(var i=0;i<SCHEDULE.length;i++){ if(n>=toMin(SCHEDULE[i].start) && n<slotEnd(i)) return i; }
     return -1;
   }
-  var forced=function(){ return SHARED.forceActIndex!=null && SHARED.forceActIndex>=0 && SHARED.forceActIndex<SCHEDULE.length; };
 
-  // ---------- renderers ----------
   function renderMsg(){
     var el=document.getElementById("afl-msg");
     if(SHARED.message && String(SHARED.message).trim()!==""){ el.style.display="flex"; el.textContent=SHARED.message; }
@@ -206,7 +211,6 @@
   function renderNow(){
     var n=nowMin(), el=document.getElementById("afl-now"), nx=document.getElementById("afl-next");
     el.className="afl-now";
-
     if(!forced() && n<toMin(DAY_START)){
       el.classList.add("doors");
       el.innerHTML='<p class="kicker">Doors</p><h1>Warming up</h1><div class="meta">The festival opens at 1pm. First up: the Symposium in RHB 137A.</div>';
@@ -217,7 +221,6 @@
       el.innerHTML='<p class="kicker">That\u2019s a wrap</p><h1>Thank you</h1><div class="meta">Thank you for being part of the first-ever Alchemy Festival. See you next time.</div>';
       nx.style.display="none"; return;
     }
-
     var cur=currentIndex(n);
     if(cur===-1){
       el.classList.add("change");
@@ -227,21 +230,19 @@
       var kicker = s.type==="symposium" ? "On now · Symposium" : (s.type==="sw" ? "On now · Spoken Word Stage" : "On now");
       var body;
       if(s.type==="sw"){
-        body='<h1>Spoken Word</h1><div class="sw-names">'+s.names.map(function(nm){return "<span>"+nm+"</span>";}).join("")+'</div><div class="meta" style="margin-top:10px;">'+s.venue+'</div>';
+        body='<h1>Spoken Word</h1><div class="sw-names">'+(s.names||[]).map(function(nm){return "<span>"+nm+"</span>";}).join("")+'</div><div class="meta" style="margin-top:10px;">'+(s.venue||"")+'</div>';
       } else {
         var tail = forced() ? "" : " · on until "+fmt(slotEnd(cur));
-        body='<h1>'+s.name+'</h1><div class="meta">'+s.venue+tail+'</div>';
+        body='<h1>'+s.name+'</h1><div class="meta">'+(s.venue||"")+tail+'</div>';
       }
       el.innerHTML='<p class="kicker">'+kicker+'</p>'+body;
     }
-
-    // NEXT
     var nextSlot=null;
     if(forced()){ if(cur>=0 && cur+1<SCHEDULE.length) nextSlot=SCHEDULE[cur+1]; }
     else { for(var j=0;j<SCHEDULE.length;j++){ if(toMin(SCHEDULE[j].start)>n){ nextSlot=SCHEDULE[j]; break; } } }
     if(nextSlot){
       nx.style.display="flex";
-      var t = forced() ? nextSlot.disp : fmt(toMin(nextSlot.start));
+      var t = forced() ? nextSlot._disp : fmt(toMin(nextSlot.start));
       nx.innerHTML='<span class="lbl">Next up</span> <span>'+nameOf(nextSlot)+'</span> <span class="nx-time">'+t+'</span>';
     } else { nx.style.display="none"; }
   }
@@ -249,7 +250,7 @@
   function renderAllday(){
     var n=nowMin(), wrap=document.getElementById("afl-allday"); wrap.innerHTML="";
     ALLDAY.forEach(function(a){
-      var state, cls;
+      var state,cls;
       if(a.allday){ state="Open all day"; cls="open"; }
       else if(n<toMin(a.start)){ state="From "+fmt(toMin(a.start)); cls="open"; }
       else if(n>=toMin(a.start) && n<toMin(a.end)){ state=a.openWord||"On now"; cls="on"; }
@@ -269,19 +270,18 @@
       var node;
       if(s.type==="sw"){
         node='<div class="afl-sw '+(status==="past"?"afl-past":status==="current"?"afl-current":"")+'">'
-           +'<div class="sw-top"><span class="sw-time">'+s.disp+'</span><span class="sw-lbl">Spoken Word Stage</span>'+nowBadge+'</div>'
-           +'<div class="sw-names">'+s.names.map(function(nm){return "<span>"+nm+"</span>";}).join("")+'</div></div>';
+           +'<div class="sw-top"><span class="sw-time">'+s._disp+'</span><span class="sw-lbl">Spoken Word Stage</span>'+nowBadge+'</div>'
+           +'<div class="sw-names">'+(s.names||[]).map(function(nm){return "<span>"+nm+"</span>";}).join("")+'</div></div>';
       } else {
         var finale = s.type==="finale" ? " finale" : "";
         node='<div class="afl-row'+finale+' '+(status==="past"?"afl-past":status==="current"?"afl-current":"")+'">'
-           +'<div class="time">'+s.disp+'</div><span class="dot '+(s.dot||"coral")+'"></span>'
+           +'<div class="time">'+s._disp+'</div><span class="dot '+(s.dot||"coral")+'"></span>'
            +'<div class="nm">'+s.name+'</div>'+nowBadge+'</div>';
       }
       wrap.innerHTML+=node;
     });
   }
 
-  // ---------- crew (local test nudge, this browser only) ----------
   function mountCrew(){
     if(qs("crew")!=="1") return;
     var box=document.createElement("div"); box.className="afl-crew";
@@ -290,15 +290,12 @@
       +'<div class="btns"><button data-d="-5">\u22125</button><button data-d="5">+5</button><button class="reset" data-d="0">Reset</button></div>';
     document.getElementById("afl").appendChild(box);
     box.addEventListener("click",function(e){
-      var b=e.target.closest("button"); if(!b) return;
-      var d=+b.getAttribute("data-d");
-      setLocalOffset(d===0?0:getLocalOffset()+d);
-      paint(); render();
+      var b=e.target.closest("button"); if(!b) return; var d=+b.getAttribute("data-d");
+      setLocalOffset(d===0?0:getLocalOffset()+d); paint(); render();
     });
     paint();
   }
 
-  // ---------- render + poll ----------
   function render(){
     document.getElementById("afl-clock").textContent=fmtClock(nowMin());
     renderMsg(); renderNow(); renderAllday(); renderRun();
@@ -312,21 +309,22 @@
         if(j && typeof j==="object"){
           SHARED.offsetMinutes = (typeof j.offsetMinutes==="number") ? j.offsetMinutes : 0;
           SHARED.message = (typeof j.message==="string") ? j.message : "";
-          SHARED.forceActIndex = (j.forceActIndex===null || typeof j.forceActIndex==="number") ? j.forceActIndex : null;
+          SHARED.forceActId = (typeof j.forceActId==="string") ? j.forceActId : null;
+          SHARED.schedule = Array.isArray(j.schedule) ? j.schedule : null;
         }
-        render();
+        rebuild(); render();
       })
-      .catch(function(){ /* offline / not found: keep last known, keep running on clock */ render(); });
+      .catch(function(){ rebuild(); render(); });
   }
 
   function boot(){
+    rebuild();  // start on fallback immediately
     document.getElementById("afl-jump-btn").addEventListener("click",scrollToNow);
     mountCrew();
-    render();                 // paint immediately on clock
-    fetchState();             // then pull shared state
+    render();
+    fetchState();
     setTimeout(scrollToNow,500);
-    setInterval(fetchState,20000);   // re-pull shared state every 20s
-    setInterval(render,20000);       // re-paint clock/edges every 20s
+    setInterval(fetchState,20000);
   }
   if(document.readyState==="loading"){ document.addEventListener("DOMContentLoaded",boot); } else { boot(); }
 })();
