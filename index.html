@@ -127,8 +127,13 @@
   var STATE_URL="https://api.jsonbin.io/v3/b/"+BIN_ID+"/latest";
   var POLL_MS=25000;
 
+  // Any dot value that isn't one of the three brand colours falls back to a
+  // visible coral dot (guards against "None"/blank/typo values from the data).
+  var DOT_COLORS={coral:1,yellow:1,teal:1};
+  function dotClass(v){ return DOT_COLORS[v] ? v : "coral"; }
+
   var DEFAULT_SCHEDULE=[
-    {id:"s0",start:"13:00",end:"15:00",venue:"RHB 137A",type:"symposium",name:"Symposium — Alchemical Thinking",dot:"yellow"},
+    {id:"s0",start:"13:00",end:"15:00",venue:"Ian Gulland Lecture Theatre",type:"symposium",name:"Symposium — Alchemical Thinking",dot:"yellow"},
     {id:"s1",start:"15:00",venue:"Great Hall",type:"act",name:"DJ Jamie",dot:"coral"},
     {id:"s2",start:"16:00",end:"16:25",venue:"Great Hall",type:"sw",names:["Yaz","Leah & Arielle","Alinda"]},
     {id:"s3",start:"16:25",venue:"Great Hall",type:"act",name:"Immaculate",dot:"yellow"},
@@ -151,7 +156,7 @@
     {id:"s20",start:"20:15",end:"21:00",venue:"Great Hall",type:"finale",name:"UYT Collective",dot:"yellow"}
   ];
   var ALLDAY=[
-    {name:"Symposium", venue:"RHB 137A", start:"13:00", end:"15:00"},
+    {name:"Symposium", venue:"Ian Gulland Lecture Theatre", start:"13:00", end:"15:00"},
     {name:"Festival BBQ", venue:"Thirty Five Café", start:"15:00", end:"16:30", openWord:"Serving now"},
     {name:"Cinema", venue:"Goldsmiths Cinema", allday:true},
     {name:"Exhibition", venue:"Kingsway Corridor", allday:true}
@@ -213,7 +218,7 @@
     var n=nowMin(), el=document.getElementById("afl-now"), nx=document.getElementById("afl-next");
     el.className="afl-now";
     if(!forced() && n<toMin(DAY_START)){ el.classList.add("doors");
-      el.innerHTML='<p class="kicker">Doors</p><h1>Warming up</h1><div class="meta">The festival opens at 1pm. First up: the Symposium in RHB 137A.</div>'; nx.style.display="none"; return; }
+      el.innerHTML='<p class="kicker">Doors</p><h1>Warming up</h1><div class="meta">The festival opens at 1pm. First up: the Symposium in the Ian Gulland Lecture Theatre.</div>'; nx.style.display="none"; return; }
     if(!forced() && n>=toMin(DAY_END)){ el.classList.add("wrap");
       el.innerHTML='<p class="kicker">That\u2019s a wrap</p><h1>Thank you</h1><div class="meta">Thank you for being part of the first-ever Alchemy Festival. See you next time.</div>'; nx.style.display="none"; return; }
     var cur=currentIndex(n);
@@ -261,7 +266,7 @@
       } else {
         var finale=s.type==="finale"?" finale":"";
         node='<div class="afl-row'+finale+' '+(status==="past"?"afl-past":status==="current"?"afl-current":"")+'">'
-          +'<div class="time">'+s._disp+'</div><span class="dot '+(s.dot||"coral")+'"></span>'
+          +'<div class="time">'+s._disp+'</div><span class="dot '+dotClass(s.dot)+'"></span>'
           +'<div class="nm">'+s.name+'</div>'+nowBadge+'</div>';
       }
       wrap.innerHTML+=node;
